@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-@author: oemof developing group
+@author: oemof developer group
 
 Classes in this module correspond to specific types of powerplants.
 
@@ -103,8 +103,6 @@ class Base(ABC):
           by a :py:class:`pandas.DataFrame`.
 
         """
-        # @Günni: sollte self.model hier überschrieben werden? könnte das neu
-        # initialisieren von model irgendwelche Probleme ergeben?
         model = kwargs.pop('model', self.model)
         if not model == self.model:
             model = model(**self.parameters)
@@ -172,6 +170,8 @@ class Photovoltaic(Base):
         super().__init__(model=model, **attributes)
 
     def feedin(self, weather, scaling=None, scaling_value=1, **kwargs):
+        # @Günni- scaling_value besser None? 1 hat den Vorteil, dass das
+        # resultierende Profil normiert ist
         feedin = super().feedin(weather=weather, **kwargs)
         if scaling:
             feedin_scaling = {
@@ -243,3 +243,4 @@ class WindPowerPlant(Base):
     @property
     def nominal_power(self):
         return self.model.nominal_power_wind_power_plant
+

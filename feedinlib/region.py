@@ -80,24 +80,24 @@ def pv_feedin_distribution_register(self, distribution_dict, technical_parameter
     # -> for weather_cell in register
 
     #   for each pvsystem initialize the PVSystem
-        for key in technical_parameters:
-            module_dict = technical_parameters[key]
-            pv_system = Photovoltaic(**module_dict)
-            
-            #calculate the feedin and set the scaling to 'area' or 'peak_power'
-            feedin_scaled = pv_system.feedin(
-                    weather=weather_df[['wind_speed', 'temp_air', 'dhi', 'dirhi', 'ghi']],
-                    location=(lat, lon),
-                    scaling='peak_power', scaling_value=1)
-            
-            # get the distribution for the pv_module
-            dist = distribution_dict[key]
-            # get the local total installed capacity
-            local_installed_capacity = installed_capacity['lat', 'lon']
-            # scale the output with the module_distribution and the local installed capacity
-            module_feedin = feedin_scaled.multiply(dist * local_installed_capacity)
-            # add the module output to the output series
-            feedin = output.add(module_feedin)
+    for key in technical_parameters:
+        module_dict = technical_parameters[key]
+        pv_system = Photovoltaic(**module_dict)
+
+        #calculate the feedin and set the scaling to 'area' or 'peak_power'
+        feedin_scaled = pv_system.feedin(
+                weather=weather_df[['wind_speed', 'temp_air', 'dhi', 'dirhi', 'ghi']],
+                location=(lat, lon),
+                scaling='peak_power', scaling_value=1)
+
+        # get the distribution for the pv_module
+        dist = distribution_dict[key]
+        # get the local total installed capacity
+        local_installed_capacity = installed_capacity['lat', 'lon']
+        # scale the output with the module_distribution and the local installed capacity
+        module_feedin = feedin_scaled.multiply(dist * local_installed_capacity)
+        # add the module output to the output series
+        feedin = output.add(module_feedin)
     # return the total feedin time series
     return feedin
 
@@ -152,6 +152,7 @@ def pv_feedin_distribution_register(self, distribution_dict, technical_parameter
         :return:
             absolute Einspeisung für Region
         """
+        # weise jeder Anlage eine Wetterzelle zu (pd.cut)(solange wetterdaten noch nicht vorhanden sind, dummy funktion die verschiedene wetterpunkte zuweist verwenden)
         # (PVSystem initialisieren)
         # for weather_cell in register
         #   initialisiere Location
@@ -209,4 +210,19 @@ def assignment_func_mean_wind_speed(register, weather):
         register[:, 'type'] = 'E-101/3050'
         register[:, 'hub_height'] = 100
     return register
+
+#
+# data = np.random.rand(4, 3)
+# locs = ['IA', 'IL', 'IN']
+# times = pd.date_range('2000-01-01', periods=4)
+# foo = xr.DataArray(data)
+# foo = xr.DataArray(data, coords=[times, locs], dims=['time', 'space'])
+#
+#
+# temp = 15 + 8 * np.random.randn(2, 2, 3)
+# precip = 10 * np.random.rand(2, 2, 3)
+# lon = [[-99.83, -99.32], [-99.79, -99.23]]
+# lat = [[42.25, 42.21], [42.63, 42.59]]
+#
+
 
