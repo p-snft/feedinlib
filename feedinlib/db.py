@@ -8,6 +8,8 @@ import oedialect
 
 from feedinlib import openFRED as ofr
 
+import time
+
 
 TRANSLATIONS = {
     "windpowerlib": {
@@ -304,3 +306,87 @@ class Weather:
             )
             series.update({k: series[k][index] for k in series})
         return DF(index=index, data={k: series[k].values for k in series})
+
+
+if __name__ == "__main__":
+    from shapely.geometry import Point
+    from geoalchemy2.shape import to_shape
+    import os
+    import geopandas as gpd
+    import pandas as pd
+
+    modus = 'points'  # 'points' or 'region'
+    # modus = 'region'  # 'points' or 'region'
+
+    years = [2015, 2016]
+
+    path_to_server = '/home/sabine/rl-institut'
+    weather_data_path = path_to_server + '/04_Projekte/163_Open_FRED/03-Projektinhalte/AP7 Community/paper_data/weather_data'
+
+    if modus == 'points':
+        coordinates = [[53.128206, 12.114433], [51.785053, 14.456623],
+                       [52.564506, 13.724137]
+                       ]
+
+        points = [Point(co[1], co[0]) for co in coordinates]
+        locations = points
+        regions = None
+    elif modus == 'region':
+        # get region file
+        path = '/home/sabine/rl-institut/04_Projekte/163_Open_FRED/03-Projektinhalte/AP7 Community/paper_data/geometries/'
+        filename = os.path.join(path, 'germany', 'germany_nuts_1.geojson')
+        germany = gpd.read_file(filename)
+        berlin = germany[germany['nuts'] == 'DE300']
+        regions = berlin.iloc[0]['geometry']
+        locations = None
+
+    for year in years:
+        start = time.time()
+        weather = Weather(
+            start="{}-01-01 00:00".format(year),
+            stop="{}-12-31 23:59".format(year),
+            locations=locations,
+            heights=None,
+            variables="windpowerlib",
+            regions=regions,
+            **defaultdb()
+        )
+        end = time.time()
+        print('Time {}'.format(end - start))
+
+        if modus == 'region':
+            dfs = [[weather.df(to_shape(location.point), "windpowerlib")
+                    for location in locations]
+                   for locations in weather.regions.values()]
+            # for df in dfs:
+            print('weather.region.values():')
+            print(weather.regions.values())
+            print('Länge dfs: {}'.format(len(dfs)))
+            print('Länge dfs[0]: {}'.format(len(dfs[0])))
+            print('Länge dfs[0][0]: {}'.format(len(dfs[0][0])))
+
+            try:
+                print(len(dfs[1]))
+            except:
+                print('no 1')
+
+        elif modus == 'points':
+            weather_dfs = [weather.df(to_shape(location.point), "windpowerlib")
+                    for location in weather.locations.values()]
+            weather_df = pd.DataFrame()
+            for df, location in zip(weather_dfs, weather.locations.values()):
+                df['lat'] = to_shape(location.point).y
+                df['lon'] = to_shape(location.point).x
+                df.index = pd.MultiIndex.from_frame(
+                    df[['lat', 'lon']].reset_index())
+                df.drop(['lat', 'lon'], axis=1, inplace=True)
+                weather_df = pd.concat([weather_df, df], axis=0)
+                weather_df.rename_axis(index=['time', 'lat', 'lon'],
+                                       inplace=True)
+                filename = os.path.join(weather_data_path,
+                                        'open_fred_wind_lib_val_{}.csv'.format(
+                                            year))
+                weather_df.to_csv(filename)
+                # print(weather_df)
+
+
