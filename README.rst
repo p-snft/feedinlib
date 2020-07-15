@@ -166,7 +166,7 @@ If you do not pass a model the default model is used. So far we only have one mo
 2. Initialise a weather object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A weather object contains one weather data set and all its necessary meta data. You can define it passing all the information from your weather data source to the FeedinWeatehr class.
+A weather object contains one weather data set and all its necessary meta data. You can define it passing all the information from your weather data source to the FeedinWeather class.
 
 .. code:: python
 
